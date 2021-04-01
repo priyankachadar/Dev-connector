@@ -12,7 +12,8 @@ password:''
 
  const onChange = e => setFormData({...formData, [e.target.name]: e.target.value});
 
- const onSubmit = e => async e => {e.preventDefault();
+ const onSubmit= async e => {
+   e.preventDefault();
    
   console.log('SUCCESS');
 

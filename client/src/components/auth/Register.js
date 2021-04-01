@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import {setAlert} from '../../actions/alert';
 import PropTypes from 'prop-types';
 
-const Register = (setAlert) => {
+const Register = ({ setAlert }) => {
 const[formData, setFormData]= useState({
 name:'',
 email:'',
@@ -14,12 +14,15 @@ password2: ''
 
  const {name, email , password , password2} = formData;
 
- const onChange = e => setFormData({...formData, [e.target.name]: e.target.value});
 
- const onSubmit = e => async e => {e.preventDefault();
+ const onChange = e => 
+ setFormData({...formData, [e.target.name]: e.target.value});
+
+ const onSubmit = async e => {
+   e.preventDefault();
 if(password !== password2){
 
-    setAlert('password do not match', 'danger');
+  setAlert('Password do not match', 'danger');
 }else{
     
   console.log('SUCCESS');
