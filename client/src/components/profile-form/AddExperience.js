@@ -15,7 +15,9 @@ const AddExperience = ({ addExperience, history }) => {
     description: ''
   });
 
-  const [toDateDisabled, toogleDisabled]= useState(false);
+
+
+  const [toDateDisabled, toggleDisabled] = useState(false);
 
   const { company, title, location, from, to, current, description } = formData;
 
@@ -79,11 +81,11 @@ const AddExperience = ({ addExperience, history }) => {
               value={current}
               onChange={e => {
                 setFormData({ ...formData, current: !current });
-                // eslint-disable-next-line no-undef
                 toggleDisabled(!toDateDisabled);
+
               }}
             />{' '}
-            Current Job
+            Current school
           </p>
         </div>
         <div className="form-group">
@@ -119,4 +121,4 @@ AddExperience.propTypes = {
   addExperience: PropTypes.func.isRequired
 };
 
-export default connect(null, { addExperience })(AddExperience);
+export default connect(null, { addExperience })(withRouter(AddExperience));

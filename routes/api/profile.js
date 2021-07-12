@@ -7,7 +7,11 @@ const {check , validationResult} = require('express-validator');
 
 const Profile = require('../../models/Profile');
 const User = require('../../models/User');
+const Post = require('../../models/Post');
+
 const { route } = require('./user');
+
+
 
 //@route Get api/profile/me
 //@desc GET current users profile
@@ -171,6 +175,7 @@ router.get('/user/:user_id',async (req, res) => {
 router.delete('/', auth, async (req, res) => {
     try {
       // Remove user posts
+      await Post.deleteMany({user: req.user.id });
      
        // Remove profile
       await  Profile.findOneAndRemove({ user: req.user.id }),
@@ -290,7 +295,7 @@ router.put(
   check('degree', 'Degree is required')
   .not()
   .isEmpty(),
-  check('feildofstudy', 'FeildOfstudy is required')
+  check('feildofstudy', 'Feildofstudy is required')
   .not()
   .isEmpty(),
   check('from', 'From date is required and needs to be from the past')

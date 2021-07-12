@@ -171,7 +171,7 @@ post.likes.splice(removeIndex, 1);
 //@acess private
 
   router.post(
-    '/commnet/:id',
+    '/comment/:id',
     [
     auth,
     [
