@@ -11,6 +11,16 @@ const Post = require('../../models/Post');
 
 const { route } = require('./user');
 
+// get the users github avatar
+const getGitHubAvatar = async (githubusername) => {
+  const uri = encodeURI(`https://api.github.com/users/${githubusername}`);
+  const headers = {
+    "user-agent": "node.js",
+    Authorization: `token ${config.get("githubToken")}`,
+  };
+  const gitHubResponse = await axios.get(uri, { headers });
+  return gitHubResponse.data.avatar_url;
+};
 
 
 //@route Get api/profile/me
