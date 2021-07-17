@@ -18,7 +18,8 @@ company: '',
   facebook: '',
   linkedin: '',
   youtube: '',
-  instagram: ''
+  instagram: '',
+  usegithubavatar: false
 });
 
 const [displaySocialInputs, toggleSocialInputs] = useState(false);
@@ -36,6 +37,7 @@ setFormData({
     skills:loading || !profile.skills ? '' : profile.skills.join(','),
     githubusername:
     loading || !profile.githubusername? '' : profile.githubusername,
+    usegithubavatar: loading || !profile.usegithubavatar ? '' : profile.usegithubavatar,
     bio:loading || !profile.bio ? '' : profile.bio,
     twitter:loading || !profile.social ? '' : profile.social.twitter,
     facebook:loading || !profile.social ? '' : profile.social.facebook,
@@ -59,11 +61,16 @@ const {
     facebook,
     linkedin,
     youtube,
-    instagram
+    instagram,
+    usegithubavatar
   } = formData;
 
-  const onChange = e =>
+  const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    let { name, value, checked } = e.target;
+    if (name === "usegithubavatar") value = checked;
+    setFormData({ ...formData, [name]: value });
+  };
 
     const onSubmit = e => {
       e.preventDefault();
@@ -158,6 +165,18 @@ return(
         username
       </small>
     </div>
+    <div className="form-group">
+          <input
+            type="checkbox"
+            name="usegithubavatar"
+            checked={usegithubavatar}
+            onChange={onChange}
+          />
+          <label htmlFor="usegithubavatar">
+            {" "}
+            Use GitHub avatar image (requires a valid GitHub account)
+          </label>
+        </div>
     <div className="form-group">
       <textarea
         placeholder="A short bio of yourself"

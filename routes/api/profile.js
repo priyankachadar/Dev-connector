@@ -5,8 +5,7 @@ const router = express.Router();
 const auth = require('../../middleware/auth');
 const {check , validationResult} = require('express-validator');
 // bring in normalize to give us a proper url, regardless of what user entered
-const normalize = require('normalize-url');
-const checkObjectId = require('../../middleware/checkObejctId');
+const normalize = require("normalize-url");
 
 const Profile = require('../../models/Profile');
 const User = require('../../models/User');
@@ -31,24 +30,23 @@ const getGitHubAvatar = async (githubusername) => {
 //@acess private
 
 router.get('/me',auth,async(req,res)=> {
-try{
-    const profile = await Profile.findOne({user:req.user.id}).populate(
-        'user',
-        ['name', 'avatar']
-        );
+  try {
+    const profile = await Profile.findOne({
+      user: req.user.id,
+    });
 
-if(!profile){
-    return res.status(400).json({msg:'There is no profile for this user'});
-}
+    if (!profile) {
+      return res.status(400).json({ msg: "There is no profile for this user" });
+    }
 
-res.json(profile);
-}catch(err){
+    // only populate from user document if profile exists
+    res.json(profile.populate("user", ["name", "avatar"]));
+  } catch (err) {
     console.error(err.message);
-    res.status(500).send('server error');
-}
-
-
+    res.status(500).send("Server Error");
+  }
 });
+
 
 //@route  Post api/profile
 //@desc  create and update user profile
@@ -85,67 +83,72 @@ const{
     facebook,
     twitter,
     instagram,
-    linkedin
+    linkedin,
+    usegithubavatar,
 } = req.body;
 
 
 // Build profile object 
 
-const profileFeilds = {};
-profileFeilds.user = req.user.id;
-if(company) profileFeilds.company = company;
-if(website) profileFeilds.website = website;
-if(location) profileFeilds.location = location;
-if(bio) profileFeilds.bio = bio;
-if(status) profileFeilds.status= status;
-if(githubusername) profileFeilds.githubusername= githubusername;
-if(skills) {
-    profileFeilds.skills= skills.split(',').map(skill => skill.trim());
+const profileFields = {
+  user: req.user.id,
+  company,
+  location,
+  website: website === "" ? "" : normalize(website, { forceHttps: true }),
+  bio,
+  skills: Array.isArray(skills)
+    ? skills
+    : skills.split(",").map((skill) => " " + skill.trim()),
+  status,
+  githubusername,
+  usegithubavatar,
+};
+// Build social object and add to profileFields
+const socialfields = { youtube, twitter, instagram, linkedin, facebook };
+
+for (const [key, value] of Object.entries(socialfields)) {
+  if (value && value.length > 0)
+    socialfields[key] = normalize(value, { forceHttps: true });
 }
+profileFields.social = socialfields;
 
+try {
+  // update avatar
+  let avatar;
+  if (usegithubavatar) {
+    // if usegithubavatar is true get the users github avatar
+    avatar = await getGitHubAvatar(githubusername);
+  } else {
+    // else use Gravatar
+    const user = await User.findOne({ _id: req.user.id });
 
+    avatar = normalize(
+      gravatar.url(user.email, {
+        s: "200",
+        r: "pg",
+        d: "mm",
+      }),
+      { forceHttps: true }
+    );
+  }
+  // update user's avatar url
+  await User.findOneAndUpdate({ _id: req.user.id }, { avatar });
 
+  // Using upsert option (creates new doc if no match is found):
+  let profile = await Profile.findOneAndUpdate(
+    { user: req.user.id },
+    { $set: profileFields },
+    { new: true, upsert: true }
+  );
 
-//Build social object
-
-profileFeilds.social ={};
-if (youtube) profileFeilds.social.youtube = youtube;
-if (twitter) profileFeilds.social.twitter = twitter;
-if (instagram) profileFeilds.social.instagram = instagram;
-if (linkedin) profileFeilds.social.linkedin = linkedin;
-if (facebook) profileFeilds.social.facebook = facebook;
-
-
-try{
-
-    let profile = await Profile.findOne({user: req.user.id});
-
-    if(profile){
-
-        //update
-       profile = await Profile.findOneAndUpdate(
-            {user: req.user.id},
-            {$set: profileFeilds },
-            {new: true}
-            );
-
-            return res.json(profile);
-    }
-
-    //Create Profile
-
-    profile = new Profile(profileFeilds);
-await profile.save();
-res.json(profile);
-
-
-}catch(err){
-    console.error(err.message);
-    res.status(500).send('Server Error');
-
+  res.json(profile);
+} catch (err) {
+  console.error(err.message);
+  res.status(500).send("Server Error");
 }
 }
 );
+  
 
 //@route GET api/profile
 //@desc GET all profile
@@ -221,7 +224,8 @@ router.put(
     check('from', 'From date is required and needs to be from the past')
       .not()
       .isEmpty()
-    ]
+      .custom((value, { req }) => (req.body.to ? value < req.body.to : true)),
+    ],
 ],
 
     async (req, res) => {
@@ -238,7 +242,7 @@ router.put(
             from,
             to,
             current,
-            description
+            description,
         } = req.body;
 
         const newExp = {
@@ -248,7 +252,7 @@ router.put(
             from,
             to,
             current,
-            description
+            description,
         }
 
         try {
@@ -280,18 +284,18 @@ const removeIndex = profile.experience
 .map(item =>item.id)
 .indexOf(req.params.exp_id);
 
-profile.experience.splice(removeIndex, 1); //take something out
+foundProfile.experience = foundProfile.experience.filter(
+  (exp) => exp._id.toString() !== req.params.exp_id
+);
 
-await profile.save();
-
-res.json(profile);
-
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ msg: 'Server error' });
-  }
+await foundProfile.save();
+return res.status(200).json(foundProfile);
+} catch (error) {
+console.error(error);
+return res.status(500).json({ msg: "Server error" });
+}
 });
+
 
 // @route    PUT api/profile/education
 // @desc     Add profile education
@@ -314,7 +318,8 @@ router.put(
   check('from', 'From date is required and needs to be from the past')
     .not()
     .isEmpty()
-  ]
+    .custom((value, { req }) => (req.body.to ? value < req.body.to : true)),
+  ],
 ],
 
   async (req, res) => {
@@ -331,7 +336,7 @@ router.put(
           from,
           to,
           current,
-          description
+          description,
       } = req.body;
 
       const newEdu = {
@@ -342,23 +347,21 @@ router.put(
           from,
           to,
           current,
-          description
+          description,
       }
 
       try {
-          const profile = await Profile.findOne({ user: req.user.id });
-
-          profile.education.unshift(newEdu); // unshift take most recent is first
-
-          await profile.save();
-          res.json(profile);
-      } catch (err) {
-          console.error(err.message);
-          res.status(500).send('Server Error');
-      }
+              const foundProfile = await Profile.findOne({ user: req.user.id });
+    foundProfile.education = foundProfile.education.filter(
+      (edu) => edu._id.toString() !== req.params.edu_id
+    );
+    await foundProfile.save();
+    return res.status(200).json(foundProfile);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ msg: "Server error" });
   }
-);
-
+});
 
 // @route    DELETE api/profile/experience/:edu_id
 // @desc     Delete education from profile
