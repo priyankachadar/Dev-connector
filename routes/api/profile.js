@@ -1,17 +1,20 @@
-const express = require('express');
-const request = require('request');
-const config = require('config');
+const express = require("express");
+const gravatar = require("gravatar");
+const axios = require("axios");
+const config = require("config");
 const router = express.Router();
 const auth = require('../../middleware/auth');
 const {check , validationResult} = require('express-validator');
 // bring in normalize to give us a proper url, regardless of what user entered
 const normalize = require("normalize-url");
 
+
+
 const Profile = require('../../models/Profile');
 const User = require('../../models/User');
 const Post = require('../../models/Post');
 
-const { route } = require('./user');
+
 
 // get the users github avatar
 const getGitHubAvatar = async (githubusername) => {
@@ -277,23 +280,18 @@ router.put(
 
 router.delete('/experience/:exp_id', auth, async (req, res) => {
   try {
-    const profile = await Profile.findOne({ user: req.user.id });
+    const foundProfile = await Profile.findOne({ user: req.user.id });
 
-  //Get remove index
-const removeIndex = profile.experience
-.map(item =>item.id)
-.indexOf(req.params.exp_id);
+    foundProfile.experience = foundProfile.experience.filter(
+      (exp) => exp._id.toString() !== req.params.exp_id
+    );
 
-foundProfile.experience = foundProfile.experience.filter(
-  (exp) => exp._id.toString() !== req.params.exp_id
-);
-
-await foundProfile.save();
-return res.status(200).json(foundProfile);
-} catch (error) {
-console.error(error);
-return res.status(500).json({ msg: "Server error" });
-}
+    await foundProfile.save();
+    return res.status(200).json(foundProfile);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ msg: "Server error" });
+  }
 });
 
 
@@ -351,7 +349,28 @@ router.put(
       }
 
       try {
-              const foundProfile = await Profile.findOne({ user: req.user.id });
+        const profile = await Profile.findOne({ user: req.user.id });
+
+        profile.education.unshift(newEdu);
+  
+        await profile.save();
+  
+        res.json(profile);
+      } catch (err) {
+        console.error(err.message);
+        res.status(500).send("Server Error");
+      }
+    }
+  );
+
+// @route    DELETE api/profile/experience/:edu_id
+// @desc     Delete education from profile
+// @access   Private
+
+
+router.delete('/education/:edu_id', auth, async (req, res) => {
+  try {
+    const foundProfile = await Profile.findOne({ user: req.user.id });
     foundProfile.education = foundProfile.education.filter(
       (edu) => edu._id.toString() !== req.params.edu_id
     );
@@ -363,63 +382,25 @@ router.put(
   }
 });
 
-// @route    DELETE api/profile/experience/:edu_id
-// @desc     Delete education from profile
-// @access   Private
-
-
-router.delete('/education/:edu_id', auth, async (req, res) => {
-try {
-  const profile = await Profile.findOne({ user: req.user.id });
-
-//Get remove index
-const removeIndex = profile.education
-.map(item =>item.id)
-.indexOf(req.params.edu_id);
-
-profile.education.splice(removeIndex, 1); //take something out
-
-await profile.save();
-
-res.json(profile);
-
-
-} catch (error) {
-  console.error(error);
-  return res.status(500).json({ msg: 'Server error' });
-}
-});
-
 // @route    DELETE api/profile/giithub/:username
 // @desc     Get username from profile
 // @access   Private
 
 router.get('/github/:username', (req, res)=>{
   try{
+    const uri = encodeURI(
+      `https://api.github.com/users/${req.params.username}/repos?per_page=5&sort=created:asc`
+    );
+    const headers = {
+      "user-agent": "node.js",
+      Authorization: `token ${config.get("githubToken")}`,
+    };
 
-const options = {
-  uri: `https://api.github.com/users/${
-    req.params.username
-  }/repos?per_page=5&sort=created:asc&client_id=${config.get('githubClientId'
-  )}&client_secret=${config.get('githubSecret')}`,
-  method: 'GET',
-  headers: {'user-agent': 'node.js'}
-};
-
-request(options, (error, response , body)=>{
-  if(error) console.error(error);
-
-  if(response.statusCode!== 200){
-    res.status(404).json({msg: 'No Gitub profile found'});
-  }
-
-  res.json(JSON.parse(body));
-});
-
-  }
-  catch(err){
+    const gitHubResponse = axios.get(uri, { headers });
+    return res.json(gitHubResponse.data);
+  } catch (err) {
     console.error(err.message);
-    res.status(500).send('server Error');
+    return res.status(404).json({ msg: "No Github profile found" });
   }
 });
 

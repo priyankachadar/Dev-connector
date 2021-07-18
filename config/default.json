@@ -2,5 +2,7 @@
     "mongoURI":"mongodb+srv://pc:pc123@cluster0.ixj0k.mongodb.net/devconnector?retryWrites=true&w=majority",
     "jwtSecret":"mysecrettoken",
     "githubClientId":"0489f7134dcdfacf5452",
-    "githubSecret":"a511e7ecfd42115a2b97124836044e3adf6073f5"
+    "githubSecret":"a511e7ecfd42115a2b97124836044e3adf6073f5",
+    "githubToken": "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"
+
 }
