@@ -9,12 +9,18 @@ import {logout} from '../../actions/auth';
   const authLinks = (
 <ul>
 <li>
-<Link to="/profiles">Developers</Link>
-</li>
-<li>
-<Link to="/posts">Posts</Link>
-</li>
-<li>
+        <Link to="/profiles">
+          <i className="fas fa-user-secret"></i>{" "}
+          <span className="hide-sm">Developers</span>
+        </Link>
+      </li>
+      <li>
+        <Link to="/posts">
+          <i className="fas fa-comment"></i>{" "}
+          <span className="hide-sm">Posts</span>
+        </Link>
+      </li>
+      <li>
 <Link to="/dashboard">
 <i className="fas fa-user" />{' '}
 <span className="hide-sm">Dashboard</span>
