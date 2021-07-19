@@ -2,7 +2,8 @@
 
 > Social network for developers
 
-# Quick Start 🚀
+
+## Quick Start 🚀
 
 ### Add a default.json file in config folder with the following
 
@@ -34,7 +35,8 @@ npm run server
 
 npm run client
 
-### Server runs on http://localhost:5000 and client on http://localhost:3000
+#### Server runs on http://localhost:5000 and client on http://localhost:3000
+
 
 ## App Info
 
